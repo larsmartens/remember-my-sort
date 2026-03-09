@@ -12,8 +12,8 @@ android {
         applicationId = "eu.hxreborn.remembermysort"
         minSdk = 30
         targetSdk = 36
-        versionCode = 201
-        versionName = "2.0.0"
+        versionCode = 202
+        versionName = "2.0.1"
     }
 
     signingConfigs {

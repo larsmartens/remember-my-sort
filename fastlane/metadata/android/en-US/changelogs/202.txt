@@ -1,0 +1,1 @@
+Fix sort preferences broken after upgrading from v1.x

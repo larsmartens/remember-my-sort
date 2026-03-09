@@ -25,7 +25,9 @@ internal object GlobalSortPreferenceStore {
         cached ?: File(context.filesDir, PREF_FILENAME)
             .takeIf { it.exists() }
             ?.runCatching {
-                readText().split(':').let { (pos, dir) -> SortPreference(pos.toInt(), dir.trim().toInt()) }
+                readText()
+                    .split(':')
+                    .run { SortPreference(first().toInt(), last().trim().toInt()) }
             }?.getOrNull()
             ?.also { cached = it }
 }
