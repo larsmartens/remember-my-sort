@@ -1,0 +1,1 @@
+Migrate to libxposed API 101 interceptor chain model. Upgrade build stack: Gradle 9.4, AGP 9.1.0, Kotlin 2.3.10.
