@@ -46,15 +46,22 @@ data class FolderContext(
                 }.getOrDefault(0)
             } ?: 0
 
-        fun fromDoc(doc: Any, root: Any?, docFields: DocFields, rootFields: RootFields?) =
-            FolderContext(
-                userId = extractUserId(docFields.userId.get(doc)),
-                authority = docFields.authority.getStringOrEmpty(doc),
-                rootId = root?.let { rootFields?.rootId?.getStringOrEmpty(it) } ?: "",
-                documentId = docFields.documentId.getStringOrEmpty(doc),
-            )
+        fun fromDoc(
+            doc: Any,
+            root: Any?,
+            docFields: DocFields,
+            rootFields: RootFields?,
+        ) = FolderContext(
+            userId = extractUserId(docFields.userId.get(doc)),
+            authority = docFields.authority.getStringOrEmpty(doc),
+            rootId = root?.let { rootFields?.rootId?.getStringOrEmpty(it) } ?: "",
+            documentId = docFields.documentId.getStringOrEmpty(doc),
+        )
 
-        fun fromRoot(root: Any, fields: ExtendedRootFields): FolderContext? =
+        fun fromRoot(
+            root: Any,
+            fields: ExtendedRootFields,
+        ): FolderContext? =
             runCatching {
                 FolderContext(
                     userId = extractUserId(fields.userId?.get(root)),

@@ -20,13 +20,17 @@ indent_size = 4
 [*.gradle.kts]
 indent_size = 4
 
-# Kotlin files
 [*.{kt,kts}]
-indent_size = 4
-max_line_length = 100
 ktlint_code_style = ktlint_official
-ij_kotlin_packages_to_use_import_on_demand = false
-ktlint_function_naming_ignore_when_annotated_with = Composable
+ij_kotlin_packages_to_use_import_on_demand = unset
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+[*.kt]
+max_line_length = 100
+
+[*.kts]
+max_line_length = 120
 
 # XML files
 [*.{xml,xsd}]

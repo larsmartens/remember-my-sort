@@ -1,6 +1,5 @@
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.Exec
 
 plugins {
     base
@@ -22,17 +21,4 @@ tasks.register("cleanBuild") {
     group = BasePlugin.BUILD_GROUP
     description = "Cleans the project and then assembles all builds in the app module."
     dependsOn("clean", "assembleDebugRelease")
-}
-
-tasks.register<Exec>("buildLibxposed") {
-    group = "libxposed"
-    description = "Builds libxposed/api and publishes to mavenLocal"
-    workingDir = layout.projectDirectory.dir("libxposed/api").asFile
-    commandLine(
-        "./gradlew",
-        ":api:publishApiPublicationToMavenLocal",
-        "-x",
-        ":checks:compileKotlin",
-        "--no-daemon",
-    )
 }

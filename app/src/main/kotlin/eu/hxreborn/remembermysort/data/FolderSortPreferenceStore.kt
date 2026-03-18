@@ -19,17 +19,20 @@ internal object FolderSortPreferenceStore {
         }
     }
 
-    fun loadIfExists(folderKey: String): SortPreference? =
-        synchronized(lock) { cache[folderKey] }
+    fun loadIfExists(folderKey: String): SortPreference? = synchronized(lock) { cache[folderKey] }
 
     fun delete(folderKey: String): Boolean {
-        val removed = synchronized(lock) {
-            cache.remove(folderKey)?.also { writeToDiskLocked() }
-        }
+        val removed =
+            synchronized(lock) {
+                cache.remove(folderKey)?.also { writeToDiskLocked() }
+            }
         return removed != null
     }
 
-    fun persist(folderKey: String, pref: SortPreference): Boolean {
+    fun persist(
+        folderKey: String,
+        pref: SortPreference,
+    ): Boolean {
         synchronized(lock) {
             if (cache[folderKey] == pref) return false
             cache[folderKey] = pref
@@ -46,10 +49,11 @@ internal object FolderSortPreferenceStore {
                 readLines().filter { it.isNotBlank() }.forEach { line ->
                     runCatching {
                         JSONObject(line).let { json ->
-                            into[json.getString("key")] = SortPreference(
-                                position = json.getInt("pos"),
-                                direction = json.getInt("dir"),
-                            )
+                            into[json.getString("key")] =
+                                SortPreference(
+                                    position = json.getInt("pos"),
+                                    direction = json.getInt("dir"),
+                                )
                         }
                     }
                 }
@@ -63,11 +67,12 @@ internal object FolderSortPreferenceStore {
 
             tempFile.bufferedWriter().use { writer ->
                 cache.forEach { (key, pref) ->
-                    val json = JSONObject().apply {
-                        put("key", key)
-                        put("pos", pref.position)
-                        put("dir", pref.direction)
-                    }
+                    val json =
+                        JSONObject().apply {
+                            put("key", key)
+                            put("pos", pref.position)
+                            put("dir", pref.direction)
+                        }
                     writer.write(json.toString())
                     writer.newLine()
                 }

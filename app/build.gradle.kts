@@ -1,7 +1,5 @@
 plugins {
     alias(libs.plugins.agp.app)
-    alias(libs.plugins.kotlin)
-    alias(libs.plugins.ktlint)
 }
 
 android {
@@ -12,8 +10,8 @@ android {
         applicationId = "eu.hxreborn.remembermysort"
         minSdk = 30
         targetSdk = 36
-        versionCode = 202
-        versionName = "2.0.1"
+        versionCode = 300
+        versionName = "3.0.0"
     }
 
     signingConfigs {
@@ -31,8 +29,6 @@ android {
                 keyAlias = secret("RELEASE_KEY_ALIAS")
                 keyPassword = secret("RELEASE_KEY_PASSWORD")
                 storeType = secret("RELEASE_STORE_TYPE") ?: "PKCS12"
-            } else {
-                logger.warn("RELEASE_STORE_FILE not found. Release signing is disabled.")
             }
         }
     }
@@ -45,10 +41,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig =
-                signingConfigs
-                    .getByName("release")
-                    .takeIf { it.storeFile != null }
+            signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
         }
         debug {
             isMinifyEnabled = false
@@ -72,25 +65,43 @@ android {
 
     packaging {
         resources {
-            pickFirsts += "META-INF/xposed/*"
+            merges += "META-INF/xposed/*"
+            excludes += "**"
         }
     }
 
     lint {
         abortOnError = true
+        checkReleaseBuilds = false
         disable.addAll(listOf("PrivateApi", "DiscouragedPrivateApi"))
         ignoreTestSources = true
     }
 }
 
-kotlin {
-    jvmToolchain(21)
+kotlin { jvmToolchain(21) }
+
+val ktlintSrc by tasks.registering(JavaExec::class) {
+    group = "verification"
+    description = "Runs ktlint on Kotlin source files"
+    mainClass.set("com.pinterest.ktlint.Main")
+    classpath = configurations.detachedConfiguration(
+        dependencies.create("com.pinterest.ktlint:ktlint-cli:1.8.0"),
+    )
+    args("src/**/*.kt")
 }
 
-ktlint {
-    version.set("1.8.0")
-    android.set(true)
-    ignoreFailures.set(false)
+tasks.named("check").configure {
+    dependsOn(ktlintSrc)
+}
+
+tasks.register<JavaExec>("ktlintFormat") {
+    group = "formatting"
+    description = "Fix Kotlin code style"
+    mainClass.set("com.pinterest.ktlint.Main")
+    classpath = configurations.detachedConfiguration(
+        dependencies.create("com.pinterest.ktlint:ktlint-cli:1.8.0"),
+    )
+    args("-F", "src/**/*.kt")
 }
 
 dependencies {

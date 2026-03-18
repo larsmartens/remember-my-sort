@@ -16,7 +16,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: recursive
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -24,9 +23,6 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
           cache: 'gradle'
-
-      - name: Build libxposed to mavenLocal
-        run: ./gradlew buildLibxposed
 
       - name: Decode keystore
         env:
@@ -55,7 +51,7 @@ jobs:
           excludeScopes: release
 
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           body: ${{ steps.changelog.outputs.changes || format('Release {0}', github.ref_name) }}
           files: app/build/outputs/apk/release/app-release.apk
