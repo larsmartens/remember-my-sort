@@ -20,3 +20,11 @@ jobs:
 
       - name: Build
         run: ./gradlew assembleDebug assembleRelease
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: remember-my-sort-apks
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk

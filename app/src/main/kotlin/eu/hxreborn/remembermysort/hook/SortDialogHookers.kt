@@ -32,7 +32,7 @@ class LongPressHooker : XposedInterface.Hooker {
 
         @JvmStatic
         @AfterInvocation
-        fun afterOnStart(callback: AfterHookCallback) {
+        fun after(callback: AfterHookCallback) {
             val fragment = callback.thisObject ?: return
 
             runCatching {
@@ -145,7 +145,7 @@ class SortDialogDismissHooker : XposedInterface.Hooker {
     companion object {
         @JvmStatic
         @AfterInvocation
-        fun afterOnStop(@Suppress("UNUSED_PARAMETER") callback: AfterHookCallback) {
+        fun after(@Suppress("UNUSED_PARAMETER") callback: AfterHookCallback) {
             LongPressHooker.clearDialogState()
         }
     }

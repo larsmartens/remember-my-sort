@@ -22,7 +22,7 @@ class DirectoryLoaderHooker : XposedInterface.Hooker {
 
         @JvmStatic
         @BeforeInvocation
-        fun beforeInvocation(callback: BeforeHookCallback) {
+        fun before(callback: BeforeHookCallback) {
             val loader = callback.thisObject ?: return
             runCatching {
                 val ctx = extractContext(loader) ?: return
@@ -34,7 +34,7 @@ class DirectoryLoaderHooker : XposedInterface.Hooker {
 
         @JvmStatic
         @AfterInvocation
-        fun afterInvocation(@Suppress("UNUSED_PARAMETER") callback: AfterHookCallback) {
+        fun after(@Suppress("UNUSED_PARAMETER") callback: AfterHookCallback) {
             FolderContextHolder.clear()
         }
 
@@ -73,7 +73,7 @@ class FolderLoaderHooker : XposedInterface.Hooker {
 
         @JvmStatic
         @BeforeInvocation
-        fun beforeInvocation(callback: BeforeHookCallback) {
+        fun before(callback: BeforeHookCallback) {
             val loader = callback.thisObject ?: return
             runCatching {
                 val ctx = extractContext(loader) ?: return
@@ -85,7 +85,7 @@ class FolderLoaderHooker : XposedInterface.Hooker {
 
         @JvmStatic
         @AfterInvocation
-        fun afterInvocation(@Suppress("UNUSED_PARAMETER") callback: AfterHookCallback) {
+        fun after(@Suppress("UNUSED_PARAMETER") callback: AfterHookCallback) {
             FolderContextHolder.clear()
         }
 
@@ -130,7 +130,7 @@ class RecentsLoaderHooker : XposedInterface.Hooker {
     companion object {
         @JvmStatic
         @BeforeInvocation
-        fun beforeInvocation(@Suppress("UNUSED_PARAMETER") callback: BeforeHookCallback) {
+        fun before(@Suppress("UNUSED_PARAMETER") callback: BeforeHookCallback) {
             // Recents has no folder identity, clear stale context to prevent wrong saves
             FolderContextHolder.clearLast()
         }

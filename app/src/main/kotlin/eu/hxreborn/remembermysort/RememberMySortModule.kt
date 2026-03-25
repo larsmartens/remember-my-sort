@@ -1,12 +1,12 @@
 package eu.hxreborn.remembermysort
 
 import android.database.Cursor
-import eu.hxreborn.remembermysort.hook.DirectoryLoaderHooker
-import eu.hxreborn.remembermysort.hook.FolderLoaderHooker
-import eu.hxreborn.remembermysort.hook.LongPressHooker
-import eu.hxreborn.remembermysort.hook.RecentsLoaderHooker
-import eu.hxreborn.remembermysort.hook.SortCursorHooker
-import eu.hxreborn.remembermysort.hook.SortDialogDismissHooker
+import eu.hxreborn.remembermysort.hook.DirectoryLoaderHookerBridge
+import eu.hxreborn.remembermysort.hook.FolderLoaderHookerBridge
+import eu.hxreborn.remembermysort.hook.LongPressHookerBridge
+import eu.hxreborn.remembermysort.hook.RecentsLoaderHookerBridge
+import eu.hxreborn.remembermysort.hook.SortCursorHookerBridge
+import eu.hxreborn.remembermysort.hook.SortDialogDismissHookerBridge
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
@@ -40,7 +40,7 @@ class RememberMySortModule(
             val lookup = classLoader.loadClass("com.android.documentsui.base.Lookup")
             hook(
                 sortModel.getDeclaredMethod("sortCursor", Cursor::class.java, lookup),
-                SortCursorHooker::class.java,
+                SortCursorHookerBridge::class.java,
             )
             log("Hooked $className.sortCursor")
         }.onFailure { e ->
@@ -52,8 +52,8 @@ class RememberMySortModule(
         for (className in SORT_FRAGMENT_CLASSES) {
             runCatching {
                 val clazz = classLoader.loadClass(className)
-                hook(clazz.getMethod("onStart"), LongPressHooker::class.java)
-                hook(clazz.getMethod("onStop"), SortDialogDismissHooker::class.java)
+                hook(clazz.getMethod("onStart"), LongPressHookerBridge::class.java)
+                hook(clazz.getMethod("onStop"), SortDialogDismissHookerBridge::class.java)
                 log("Hooked $className.onStart/onStop")
             }.onFailure {
                 log("$className not found, skipping")
@@ -80,9 +80,9 @@ class RememberMySortModule(
         )
 
         private val LOADERS: List<Pair<String, Class<out XposedInterface.Hooker>>> = listOf(
-            "com.android.documentsui.DirectoryLoader" to DirectoryLoaderHooker::class.java,
-            "com.android.documentsui.loaders.FolderLoader" to FolderLoaderHooker::class.java,
-            "com.android.documentsui.RecentsLoader" to RecentsLoaderHooker::class.java,
+            "com.android.documentsui.DirectoryLoader" to DirectoryLoaderHookerBridge::class.java,
+            "com.android.documentsui.loaders.FolderLoader" to FolderLoaderHookerBridge::class.java,
+            "com.android.documentsui.RecentsLoader" to RecentsLoaderHookerBridge::class.java,
         )
 
         fun log(

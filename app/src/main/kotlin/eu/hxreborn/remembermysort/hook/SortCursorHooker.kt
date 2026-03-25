@@ -34,7 +34,7 @@ class SortCursorHooker : XposedInterface.Hooker {
 
         @JvmStatic
         @BeforeInvocation
-        fun beforeInvocation(callback: BeforeHookCallback) {
+        fun before(callback: BeforeHookCallback) {
             val sortModel = callback.thisObject ?: return
 
             val fields =
