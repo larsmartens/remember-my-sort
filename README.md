@@ -33,7 +33,7 @@ From the file picker's sort menu:
 
 ## Requirements
 
-Requires [LSPosed](https://github.com/JingMatrix/LSPosed) with API 101 support and Android 11+. Works on Pixel and AOSP-based ROMs. OEM-modified ROMs are untested.
+Requires an LSPosed Manager version with API 101 support and Android 11+. Works on Pixel and AOSP-based ROMs. OEM-modified ROMs are untested.
 
 ## Installation
 
