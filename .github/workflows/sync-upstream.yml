@@ -1,0 +1,119 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/hxreborn/remember-my-sort.git || true
+
+      - name: Fetch upstream
+        run: git fetch upstream main --tags
+
+      - name: Check for upstream commits
+        id: check
+        run: |
+          BEHIND=$(git rev-list HEAD..upstream/main --count)
+          echo "behind=$BEHIND" >> "$GITHUB_OUTPUT"
+          echo "Upstream is $BEHIND commit(s) ahead"
+
+      - name: Capture fork baseline
+        id: base
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Merge upstream
+        if: steps.check.outputs.behind != '0'
+        run: |
+          git merge upstream/main --no-edit -X ours || {
+            git diff --name-only --diff-filter=U > conflicts.txt
+            while IFS= read -r path; do
+              [ -n "$path" ] || continue
+              case "$path" in
+                .github/workflows/*)
+                  git restore --source="${{ steps.base.outputs.sha }}" --staged --worktree -- "$path" 2>/dev/null || git rm -f -- "$path"
+                  ;;
+                gradle.properties)
+                  git checkout --theirs -- "$path" 2>/dev/null || git rm -f -- "$path"
+                  ;;
+                *)
+                  git checkout --ours -- "$path" 2>/dev/null || git rm -f -- "$path"
+                  ;;
+              esac
+            done < conflicts.txt
+            rm -f conflicts.txt
+            git add -A
+            git commit --no-edit
+          }
+
+      - name: Bump fork version
+        if: steps.check.outputs.behind != '0'
+        id: version
+        run: |
+          RAW_VERSION=$(sed -ne 's/^version.name=//p' gradle.properties)
+          BASE_VERSION=${RAW_VERSION%%-fork.*}
+          BUILD_COUNT=$(git rev-list --count HEAD)
+          VERSION_CODE=$((300000 + BUILD_COUNT))
+          VERSION_NAME="${BASE_VERSION}-fork.${BUILD_COUNT}"
+          TAG_NAME="v${VERSION_NAME}"
+          if grep -q '^version\\.code=' gradle.properties; then
+            sed -i "s/^version\\.code=.*/version.code=${VERSION_CODE}/" gradle.properties
+          else
+            printf '\nversion.code=%s\n' "${VERSION_CODE}" >> gradle.properties
+          fi
+          if grep -q '^version\\.name=' gradle.properties; then
+            sed -i "s/^version\\.name=.*/version.name=${VERSION_NAME}/" gradle.properties
+          else
+            printf 'version.name=%s\n' "${VERSION_NAME}" >> gradle.properties
+          fi
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit bumped version
+        if: steps.check.outputs.behind != '0'
+        run: |
+          git add gradle.properties
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: prepare fork release metadata"
+          fi
+
+      - name: Restore fork workflows
+        if: steps.check.outputs.behind != '0'
+        run: |
+          git restore --source="${{ steps.base.outputs.sha }}" --staged --worktree .github/workflows || true
+          if ! git diff --quiet -- .github/workflows; then
+            git add .github/workflows
+            git commit -m "chore: preserve fork workflows after upstream sync"
+          fi
+
+      - name: Push synced branch
+        if: steps.check.outputs.behind != '0'
+        run: git push origin main
+
+      - name: Create and push release tag
+        if: steps.check.outputs.behind != '0'
+        run: |
+          git tag -a "${{ steps.version.outputs.tag_name }}" -m "${{ steps.version.outputs.tag_name }}"
+          git push origin "${{ steps.version.outputs.tag_name }}"
