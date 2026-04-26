@@ -7,7 +7,7 @@
 <li>Per-folder overrides take priority over global default</li>
 </ul>
 
-<p>Requires official LSPosed framework, Android 11+ and root access.</p>
+<p>Requires LSPosed framework, Android 11+ and root access.</p>
 
 <p>Supported packages:</p>
 <ul>

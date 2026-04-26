@@ -63,4 +63,4 @@ Requires an LSPosed Manager version with API 101 support and Android 11+. Works 
 
 <a href="LICENSE"><img src=".github/assets/gplv3.svg" height="90" alt="GPLv3"></a>
 
-This project is licensed under the GNU General Public License v3.0 -- see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE) for details.
