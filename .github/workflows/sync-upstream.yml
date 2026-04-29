@@ -71,22 +71,16 @@ jobs:
         if: steps.check.outputs.behind != '0'
         id: version
         run: |
-          RAW_VERSION=$(sed -ne 's/^version.name=//p' gradle.properties | tr -d '\r')
+          RAW_VERSION=$(grep '^version\.name=' gradle.properties | head -n 1 | cut -d= -f2- | tr -d '\r')
           BASE_VERSION=${RAW_VERSION%%-fork.*}
           BUILD_COUNT=$(git rev-list --count HEAD)
           VERSION_CODE=$((300000 + BUILD_COUNT))
           VERSION_NAME="${BASE_VERSION}-fork.${BUILD_COUNT}"
           TAG_NAME="v${VERSION_NAME}"
-          if grep -q '^version\\.code=' gradle.properties; then
-            sed -i "s/^version\\.code=.*/version.code=${VERSION_CODE}/" gradle.properties
-          else
-            printf '\nversion.code=%s\n' "${VERSION_CODE}" >> gradle.properties
-          fi
-          if grep -q '^version\\.name=' gradle.properties; then
-            sed -i "s/^version\\.name=.*/version.name=${VERSION_NAME}/" gradle.properties
-          else
-            printf 'version.name=%s\n' "${VERSION_NAME}" >> gradle.properties
-          fi
+          TMP_PROPS=$(mktemp)
+          grep -v '^version\.\(code\|name\)=' gradle.properties > "${TMP_PROPS}"
+          printf '\nversion.code=%s\nversion.name=%s\n' "${VERSION_CODE}" "${VERSION_NAME}" >> "${TMP_PROPS}"
+          mv "${TMP_PROPS}" gradle.properties
           printf 'version_code=%s\n' "${VERSION_CODE}" >> "$GITHUB_OUTPUT"
           printf 'version_name=%s\n' "${VERSION_NAME}" >> "$GITHUB_OUTPUT"
           printf 'tag_name=%s\n' "${TAG_NAME}" >> "$GITHUB_OUTPUT"
