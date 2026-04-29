@@ -71,7 +71,7 @@ jobs:
         if: steps.check.outputs.behind != '0'
         id: version
         run: |
-          RAW_VERSION=$(sed -ne 's/^version.name=//p' gradle.properties)
+          RAW_VERSION=$(sed -ne 's/^version.name=//p' gradle.properties | tr -d '\r')
           BASE_VERSION=${RAW_VERSION%%-fork.*}
           BUILD_COUNT=$(git rev-list --count HEAD)
           VERSION_CODE=$((300000 + BUILD_COUNT))
@@ -87,9 +87,9 @@ jobs:
           else
             printf 'version.name=%s\n' "${VERSION_NAME}" >> gradle.properties
           fi
-          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
-          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
-          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          printf 'version_code=%s\n' "${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          printf 'version_name=%s\n' "${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          printf 'tag_name=%s\n' "${TAG_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Commit bumped version
         if: steps.check.outputs.behind != '0'
