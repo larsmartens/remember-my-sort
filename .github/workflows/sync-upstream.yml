@@ -37,6 +37,11 @@ jobs:
         run: |
           BEHIND=$(git rev-list HEAD..upstream/main --count)
           echo "behind=$BEHIND" >> "$GITHUB_OUTPUT"
+          if [ "$BEHIND" != "0" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          fi
           echo "Upstream is $BEHIND commit(s) ahead"
 
       - name: Capture fork baseline
@@ -68,7 +73,7 @@ jobs:
           }
 
       - name: Bump fork version
-        if: steps.check.outputs.behind != '0'
+        if: steps.check.outputs.should_release == 'true'
         id: version
         run: |
           RAW_VERSION=$(grep '^version\.name=' gradle.properties | head -n 1 | cut -d= -f2- | tr -d '\r')
@@ -86,7 +91,7 @@ jobs:
           printf 'tag_name=%s\n' "${TAG_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Commit bumped version
-        if: steps.check.outputs.behind != '0'
+        if: steps.check.outputs.should_release == 'true'
         run: |
           git add gradle.properties
           if ! git diff --cached --quiet; then
@@ -103,11 +108,65 @@ jobs:
           fi
 
       - name: Push synced branch
-        if: steps.check.outputs.behind != '0'
+        if: steps.check.outputs.should_release == 'true'
         run: git push origin main
 
       - name: Create and push release tag
-        if: steps.check.outputs.behind != '0'
+        if: steps.check.outputs.should_release == 'true'
         run: |
           git tag -a "${{ steps.version.outputs.tag_name }}" -m "${{ steps.version.outputs.tag_name }}"
           git push origin "${{ steps.version.outputs.tag_name }}"
+
+      - name: Set up JDK 21
+        if: steps.check.outputs.should_release == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Decode keystore
+        if: steps.check.outputs.should_release == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "${{ github.workspace }}/release.keystore"
+          fi
+
+      - name: Build release APK
+        if: steps.check.outputs.should_release == 'true'
+        run: ./gradlew assembleRelease --no-daemon
+        env:
+          RELEASE_STORE_FILE: ${{ github.workspace }}/release.keystore
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+
+      - name: Upload sync artifacts
+        if: steps.check.outputs.should_release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: remember-my-sort-${{ steps.version.outputs.version_name }}
+          path: app/build/outputs/apk/release/*.apk
+
+      - name: Create GitHub release
+        if: steps.check.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          body: Release ${{ steps.version.outputs.tag_name }}
+          files: app/build/outputs/apk/release/*.apk
+          fail_on_unmatched_files: true
+
+      - name: Mirror release to Xposed-Modules-Repo
+        if: steps.check.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: Xposed-Modules-Repo/eu.hxreborn.remembermysort
+          token: ${{ secrets.XPOSED_REPO_PAT }}
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          body: Release ${{ steps.version.outputs.tag_name }}
+          files: app/build/outputs/apk/release/*.apk
+          fail_on_unmatched_files: true
+          make_latest: true
