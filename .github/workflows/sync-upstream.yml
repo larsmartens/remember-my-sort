@@ -15,6 +15,8 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      HAS_XPOSED_REPO_PAT: ${{ secrets.XPOSED_REPO_PAT != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -160,7 +162,7 @@ jobs:
           fail_on_unmatched_files: true
 
       - name: Mirror release to Xposed-Modules-Repo
-        if: steps.check.outputs.should_release == 'true'
+        if: steps.check.outputs.should_release == 'true' && env.HAS_XPOSED_REPO_PAT == 'true'
         uses: softprops/action-gh-release@v2
         with:
           repository: Xposed-Modules-Repo/eu.hxreborn.remembermysort
@@ -170,3 +172,7 @@ jobs:
           files: app/build/outputs/apk/release/*.apk
           fail_on_unmatched_files: true
           make_latest: true
+
+      - name: Report skipped Xposed mirror
+        if: steps.check.outputs.should_release == 'true' && env.HAS_XPOSED_REPO_PAT != 'true'
+        run: echo "::warning::XPOSED_REPO_PAT is not configured; fork release was created, but Xposed-Modules-Repo was not updated."
