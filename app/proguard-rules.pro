@@ -1,26 +1,11 @@
-# Keep LSPosed module entry point
--keep class eu.hxreborn.remembermysort.RememberMySortModule { *; }
-
-# Keep all hooker classes and their methods
--keep @io.github.libxposed.api.annotations.XposedHooker class * { *; }
-
-# Keep libxposed API annotations
--keep class io.github.libxposed.api.annotations.** { *; }
--keepattributes *Annotation*
--keepattributes RuntimeVisibleAnnotations
-
-# Prevent R8 from removing hook methods
--keepclassmembers class * {
-    @io.github.libxposed.api.annotations.BeforeInvocation <methods>;
-    @io.github.libxposed.api.annotations.AfterInvocation <methods>;
-}
-
-# Xposed module class pattern
+# Xposed module
 -adaptresourcefilecontents META-INF/xposed/java_init.list
+-keepattributes RuntimeVisibleAnnotations
 -keep,allowobfuscation,allowoptimization public class * extends io.github.libxposed.api.XposedModule {
-    public <init>(...);
+    public <init>();
     public void onPackageLoaded(...);
-    public void onSystemServerLoaded(...);
+    public void onPackageReady(...);
+    public void onSystemServerStarting(...);
 }
 
 # Kotlin intrinsics optimization
